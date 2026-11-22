@@ -1,0 +1,6 @@
+{
+  "name": "JalurKargo",
+  "description": "Platform SaaS manajemen armada dan pelacakan logistik real-time dengan integrasi Google Maps dan PostgreSQL.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
