@@ -614,10 +614,10 @@ export const FleetMapPanel: React.FC<FleetMapPanelProps> = ({
             />
             <div className="min-w-0">
               <div className="text-[13px] font-semibold text-zinc-900 dark:text-white truncate">
-                {active.driver?.name || 'Budiyono Siregar'}
+                {active.driver?.name || 'Unassigned Driver'}
               </div>
               <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
-                {active.driver?.carrier || 'JNT Express'}
+                {active.driver?.carrier || 'No carrier assigned'}
               </div>
             </div>
           </div>

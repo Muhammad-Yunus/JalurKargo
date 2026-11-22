@@ -9,7 +9,7 @@ export const openApiSpec = {
       '- **App Endpoints (`/api/shipments`, `/api/keys`, `/api/inbox`)**: Require user-based login (`Authorization: Bearer <token>`).\n' +
       '- **External Ingest Endpoints (`/api/ingest/*`)**: Require machine-to-machine API Key (`X-API-Key: <key>`).\n\n' +
       '**Real-Time WebSocket Events (Socket.IO path `/socket.io`):**\n' +
-      '`shipment:upserted`, `shipment:deleted`, `telemetry:updated`, `shipment:event`, `stats:updated`, `inbox:received`, `customer:upserted`',
+      '`shipment:upserted`, `shipment:deleted`, `telemetry:updated`, `stats:updated`, `customer:upserted`, `inbox:received`, `inbox:updated`',
   },
   servers: [{ url: '/', description: 'Current JalurKargo Server' }],
   tags: [

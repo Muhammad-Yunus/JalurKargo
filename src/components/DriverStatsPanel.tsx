@@ -12,16 +12,34 @@ const TIMEFRAMES: TimeframeKey[] = ['W', 'M', '6M', 'Y'];
 export const DriverStatsPanel: React.FC<DriverStatsPanelProps> = ({ stats, onExpandClick }) => {
   const [timeframe, setTimeframe] = useState<TimeframeKey>('W');
 
-  const activeStat = stats.find((s) => s.timeframe === timeframe) ??
-    stats[0] ?? {
-      timeframe: 'W',
-      onTheWayPct: 39.7,
-      unloadingPct: 28.3,
-      loadingPct: 17.4,
-      onTheWayDuration: '3 hr 10 min',
-      unloadingDuration: '2 hr 15 min',
-      loadingDuration: '1 hr 23 min',
-    };
+  const activeStat = stats.find((s) => s.timeframe === timeframe) ?? stats[0] ?? null;
+
+  if (!activeStat) {
+    return (
+      <section className="rounded-2xl bg-white dark:bg-[#121418] border border-zinc-200 dark:border-white/[0.08] p-4 sm:p-5 shrink-0">
+        <div className="flex items-center justify-between gap-3 mb-1">
+          <h2 className="text-[17px] font-semibold tracking-tight text-zinc-900 dark:text-white">
+            Driver Statistics
+          </h2>
+          <button
+            type="button"
+            onClick={onExpandClick}
+            title="View detailed fleet analytics"
+            className="w-7 h-7 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.06] text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-[12.5px] text-zinc-500 dark:text-zinc-400 mb-3">
+          Average Time Per Day By Category
+        </p>
+        <div className="rounded-xl border border-dashed border-zinc-200 dark:border-white/10 p-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
+          No driver statistics ingested yet. Push utilization metrics via{' '}
+          <code className="font-mono">POST /api/ingest/stats</code>.
+        </div>
+      </section>
+    );
+  }
 
   const totalPct = activeStat.onTheWayPct + activeStat.unloadingPct + activeStat.loadingPct;
   const w1 = totalPct > 0 ? (activeStat.onTheWayPct / totalPct) * 100 : 46;

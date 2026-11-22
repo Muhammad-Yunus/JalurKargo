@@ -217,29 +217,35 @@ export const TopBar: React.FC<TopBarProps> = ({
                 </button>
               </div>
               <div className="divide-y divide-zinc-100 dark:divide-white/[0.06] max-h-64 overflow-y-auto">
-                {inboxMessages.slice(0, 3).map((msg) => (
-                  <button
-                    key={msg.id}
-                    type="button"
-                    onClick={() => {
-                      setNotifOpen(false);
-                      onSelectNotifications();
-                    }}
-                    className="w-full text-left py-2.5 px-1.5 hover:bg-zinc-50 dark:hover:bg-white/[0.04] rounded-lg transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-zinc-900 dark:text-white truncate">
-                        {msg.senderName}
-                      </span>
-                      <span className="text-[10px] text-zinc-400 tabular-nums shrink-0">
-                        {msg.timeLabel}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-0.5">
-                      {msg.subject}
-                    </p>
-                  </button>
-                ))}
+                {inboxMessages.length === 0 ? (
+                  <div className="py-6 px-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                    No dispatch alerts yet
+                  </div>
+                ) : (
+                  inboxMessages.slice(0, 3).map((msg) => (
+                    <button
+                      key={msg.id}
+                      type="button"
+                      onClick={() => {
+                        setNotifOpen(false);
+                        onSelectNotifications();
+                      }}
+                      className="w-full text-left py-2.5 px-1.5 hover:bg-zinc-50 dark:hover:bg-white/[0.04] rounded-lg transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-zinc-900 dark:text-white truncate">
+                          {msg.senderName}
+                        </span>
+                        <span className="text-[10px] text-zinc-400 tabular-nums shrink-0">
+                          {msg.timeLabel}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-0.5">
+                        {msg.subject}
+                      </p>
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           )}

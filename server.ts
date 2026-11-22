@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { Server as SocketIOServer } from 'socket.io';
 import swaggerUi from 'swagger-ui-express';
-import { createServer as createViteServer } from 'vite';
 import { asc, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { ensureSchema, getDb, memoryStore } from './src/db/index.ts';
@@ -279,6 +278,9 @@ async function upsertIngestedShipment(
 
     const existingIdx = memoryStore.shipments.findIndex((s) => s.orderCode === item.orderCode);
     const recordId = existingIdx >= 0 ? memoryStore.shipments[existingIdx].id : memoryStore.nextId++;
+    const resolvedShipmentId =
+      item.shipmentId ||
+      (existingIdx >= 0 ? memoryStore.shipments[existingIdx].shipmentId : generatedShipmentId);
 
     const events: ShipmentEventItem[] = (item.events ?? []).map((ev, idx) => ({
       id: memoryStore.nextId++,
@@ -295,7 +297,7 @@ async function upsertIngestedShipment(
       id: recordId,
       orderCode: item.orderCode,
       trackingRef: normalizedRef,
-      shipmentId: generatedShipmentId,
+      shipmentId: resolvedShipmentId,
       status: item.status,
       originCode: item.originCode,
       originCity: item.originCity,
@@ -371,7 +373,7 @@ async function upsertIngestedShipment(
       .update(shipments)
       .set({
         trackingRef: normalizedRef,
-        shipmentId: generatedShipmentId,
+        shipmentId: item.shipmentId || existingShipment.shipmentId,
         status: item.status,
         originCode: item.originCode,
         originCity: item.originCity,
@@ -444,15 +446,25 @@ async function upsertIngestedShipment(
 }
 
 async function startServer() {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.trim().length < 16)
+  ) {
+    console.warn(
+      '[JalurKargo] WARNING: AUTH_SECRET is missing or shorter than 16 chars in production. User sessions will invalidate on server restart.'
+    );
+  }
+
   const dbStatus = await ensureSchema();
   console.log(`[JalurKargo] Storage mode: ${dbStatus.mode}`);
 
   const app = express();
+  app.disable('x-powered-by');
   const httpServer = http.createServer(app);
   const io = new SocketIOServer(httpServer, {
     path: '/socket.io',
     cors: {
-      origin: false,
+      origin: process.env.APP_URL ? [process.env.APP_URL] : false,
     },
   });
 
@@ -461,6 +473,13 @@ async function startServer() {
       storage: getDb() ? 'postgres' : 'memory',
       timestamp: new Date().toISOString(),
     });
+  });
+
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('X-DNS-Prefetch-Control', 'off');
+    next();
   });
 
   app.use(express.json({ limit: '2mb' }));
@@ -941,6 +960,14 @@ async function startServer() {
         return;
       }
 
+      const existingEvents = await db
+        .select({ sortOrder: shipmentEvents.sortOrder })
+        .from(shipmentEvents)
+        .where(eq(shipmentEvents.shipmentRecordId, found.id))
+        .orderBy(asc(shipmentEvents.sortOrder))
+        .limit(1);
+      const nextSortOrder = existingEvents.length > 0 ? existingEvents[0].sortOrder - 1 : 0;
+
       const [ev] = await db
         .insert(shipmentEvents)
         .values({
@@ -950,7 +977,7 @@ async function startServer() {
           timeLabel: data.timeLabel,
           isCompleted: data.isCompleted,
           isEstimated: data.isEstimated,
-          sortOrder: 0,
+          sortOrder: nextSortOrder,
         })
         .returning();
 
@@ -1471,8 +1498,14 @@ async function startServer() {
     }
   });
 
+  // Return JSON 404 for unknown API routes before SPA HTML fallback
+  app.use('/api/*', (_req, res) => {
+    res.status(404).json({ error: 'API endpoint not found.' });
+  });
+
   // Vite middleware in development, static serve in production
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
